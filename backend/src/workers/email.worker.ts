@@ -2,6 +2,7 @@ import { Worker, Job } from 'bullmq';
 import { redisConnection } from '../config/redis';
 import { EMAIL_QUEUE_NAME, EmailJobPayload, dlqQueue } from '../queue/email.queue';
 import { emailService } from '../modules/email/email.service';
+import { elasticsearchService } from '../modules/search/elasticsearch.service';
 import { prisma } from '../database/prisma';
 import { config } from '../config';
 import { workerLogger } from '../utils/logger';
@@ -64,7 +65,7 @@ export class EmailWorkerService {
    * Process individual email job
    */
   private async processJob(job: Job<EmailJobPayload>): Promise<{ messageId: string; etherealUrl?: string | null }> {
-    const { scheduledEmailId, campaignId, recipientEmail, subject, htmlBody, senderEmail, senderName } = job.data;
+    const { scheduledEmailId, campaignId, recipientEmail, recipientName, subject, htmlBody, senderEmail, senderName } = job.data;
 
     // 1. Mark status as PROCESSING in DB
     await prisma.scheduledEmail.update({
@@ -128,6 +129,24 @@ export class EmailWorkerService {
         },
       },
     });
+
+    // 6. Asynchronously sync to Elasticsearch
+    elasticsearchService
+      .indexEmail({
+        id: scheduledEmailId,
+        campaignId,
+        recipient: recipientEmail,
+        recipientName,
+        subject,
+        sender: senderEmail,
+        status: EmailStatus.SENT,
+        scheduledTime: job.data.scheduledAt,
+        sentAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      })
+      .catch((err) => {
+        workerLogger.warn(`Failed to sync to Elasticsearch: ${err.message}`);
+      });
 
     return {
       messageId: result.messageId,

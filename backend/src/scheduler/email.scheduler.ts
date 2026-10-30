@@ -3,6 +3,7 @@ import { emailQueue, EmailJobPayload } from '../queue/email.queue';
 import { prisma } from '../database/prisma';
 import { config } from '../config';
 import { queueLogger } from '../utils/logger';
+import { slackService } from '../modules/slack/slack.service';
 import { EmailStatus, CampaignStatus, LogLevel } from '@prisma/client';
 
 export interface ScheduleOptions {
@@ -51,14 +52,20 @@ export class EmailScheduler {
       senderHourlyLimit,
     });
 
-    // 1. Fetch pending scheduled emails for this campaign
-    const pendingEmails = await prisma.scheduledEmail.findMany({
-      where: {
-        campaignId,
-        status: { in: [EmailStatus.PENDING, EmailStatus.FAILED] },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
+    // 1. Fetch pending scheduled emails and campaign owner
+    const [pendingEmails, campaign] = await Promise.all([
+      prisma.scheduledEmail.findMany({
+        where: {
+          campaignId,
+          status: { in: [EmailStatus.PENDING, EmailStatus.FAILED] },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.emailCampaign.findUnique({
+        where: { id: campaignId },
+        select: { userId: true },
+      }),
+    ]);
 
     if (pendingEmails.length === 0) {
       queueLogger.warn(`No pending emails found to schedule for campaign ${campaignId}`);
@@ -107,6 +114,20 @@ export class EmailScheduler {
             `Rate limit reached for ${hourKey} (global: ${globalCount}/${globalHourlyLimit}, sender: ${senderCount}/${senderHourlyLimit}). Rolling job over to next hour: ${this.getHourKey(candidateTime)}`,
             { emailId: emailRecord.id, recipient: emailRecord.recipientEmail }
           );
+
+          // Dispatch real-time Slack notification if configured
+          if (campaign?.userId && totalRollovers === 1) {
+            slackService.sendRateLimitAlert({
+              userId: campaign.userId,
+              senderEmail,
+              hourlyLimit: senderHourlyLimit,
+              currentHour: hourKey,
+              nextHour: this.getHourKey(candidateTime),
+              campaignId,
+            }).catch((err) => {
+              queueLogger.warn(`Slack alert dispatch failed gracefully: ${err.message}`);
+            });
+          }
           continue;
         }
 

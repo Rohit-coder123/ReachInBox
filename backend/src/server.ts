@@ -4,6 +4,7 @@ import { config } from './config';
 import { logger } from './utils/logger';
 import { connectDatabase, disconnectDatabase } from './database/prisma';
 import { emailWorkerService } from './workers/email.worker';
+import { elasticsearchService } from './modules/search/elasticsearch.service';
 import { redisConnection } from './config/redis';
 
 const startServer = async (): Promise<void> => {
@@ -11,7 +12,12 @@ const startServer = async (): Promise<void> => {
     // 1. Connect to Database
     await connectDatabase();
 
-    // 2. Start BullMQ Email Worker
+    // 2. Initialize Elasticsearch Index
+    elasticsearchService.initializeIndex().catch((err) => {
+      logger.warn(`Elasticsearch index initialization warning: ${err.message}`);
+    });
+
+    // 3. Start BullMQ Email Worker
     emailWorkerService.startWorker();
 
     // 3. Initialize Express application

@@ -13,6 +13,8 @@ import { swaggerSpec } from './config/swagger';
 import { authRouter } from './routes/auth.routes';
 import { healthRouter } from './routes/health.routes';
 import { queueRouter } from './routes/queue.routes';
+import { searchRouter } from './routes/search.routes';
+import { slackRouter } from './routes/slack.routes';
 import { bullBoardRouter } from './queue/bull-board';
 import { logger } from './utils/logger';
 
@@ -77,6 +79,8 @@ export const createApp = (): Application => {
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/queue', queueRouter);
+  app.use('/api/search', searchRouter);
+  app.use('/api/slack', slackRouter);
 
   // 9. Root Welcome Route
   app.get('/', (_req: Request, res: Response) => {
