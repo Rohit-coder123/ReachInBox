@@ -1,6 +1,7 @@
 import { Queue, QueueEvents, JobsOptions } from 'bullmq';
 import { redisConnection } from '../config/redis';
 import { queueLogger } from '../utils/logger';
+import { config } from '../config';
 
 export const EMAIL_QUEUE_NAME = 'email-dispatch-queue';
 export const DLQ_QUEUE_NAME = 'email-dlq';
@@ -47,14 +48,18 @@ export const dlqQueue = new Queue<EmailJobPayload & { error: string; failedAt: s
   },
 });
 
-export const emailQueueEvents = new QueueEvents(EMAIL_QUEUE_NAME, {
-  connection: redisConnection,
-});
+export const emailQueueEvents = config.app.isTest
+  ? null
+  : new QueueEvents(EMAIL_QUEUE_NAME, { connection: redisConnection });
 
 emailQueue.on('error', (err) => {
-  queueLogger.error('Email Queue Error', { error: err.message });
+  if (!config.app.isTest) {
+    queueLogger.error('Email Queue Error', { error: err.message });
+  }
 });
 
 dlqQueue.on('error', (err) => {
-  queueLogger.error('DLQ Queue Error', { error: err.message });
+  if (!config.app.isTest) {
+    queueLogger.error('DLQ Queue Error', { error: err.message });
+  }
 });

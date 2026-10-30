@@ -15,6 +15,9 @@ import { healthRouter } from './routes/health.routes';
 import { queueRouter } from './routes/queue.routes';
 import { searchRouter } from './routes/search.routes';
 import { slackRouter } from './routes/slack.routes';
+import { campaignRouter } from './routes/campaign.routes';
+import { emailRouter } from './routes/email.routes';
+import { settingsRouter } from './routes/settings.routes';
 import { bullBoardRouter } from './queue/bull-board';
 import { logger } from './utils/logger';
 
@@ -81,6 +84,9 @@ export const createApp = (): Application => {
   app.use('/api/queue', queueRouter);
   app.use('/api/search', searchRouter);
   app.use('/api/slack', slackRouter);
+  app.use('/api/campaigns', campaignRouter);
+  app.use('/api/emails', emailRouter);
+  app.use('/api/settings', settingsRouter);
 
   // 9. Root Welcome Route
   app.get('/', (_req: Request, res: Response) => {

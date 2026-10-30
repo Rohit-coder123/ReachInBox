@@ -8,7 +8,11 @@ const redisOptions: RedisOptions = {
   password: config.redis.password || undefined,
   maxRetriesPerRequest: null, // Required by BullMQ
   enableReadyCheck: false,
+  lazyConnect: config.app.isTest,
   retryStrategy: (times: number) => {
+    if (config.app.isTest || times > 3) {
+      return null;
+    }
     const delay = Math.min(times * 100, 3000);
     logger.warn(`Redis connection retry attempt #${times} in ${delay}ms`);
     return delay;
@@ -22,7 +26,9 @@ redisConnection.on('connect', () => {
 });
 
 redisConnection.on('error', (err) => {
-  logger.error('❌ Redis error:', { error: err.message });
+  if (!config.app.isTest) {
+    logger.error('❌ Redis error:', { error: err.message });
+  }
 });
 
 export const getRedisClient = (): Redis => redisConnection;
