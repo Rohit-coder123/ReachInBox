@@ -12,6 +12,8 @@ import { configurePassport } from './modules/auth/passport.config';
 import { swaggerSpec } from './config/swagger';
 import { authRouter } from './routes/auth.routes';
 import { healthRouter } from './routes/health.routes';
+import { queueRouter } from './routes/queue.routes';
+import { bullBoardRouter } from './queue/bull-board';
 import { logger } from './utils/logger';
 
 export const createApp = (): Application => {
@@ -68,9 +70,13 @@ export const createApp = (): Application => {
   // 7. Swagger Documentation Route
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
-  // 8. Core API Routes
+  // 8. Bull-Board Queue Dashboard
+  app.use('/admin/queues', bullBoardRouter);
+
+  // 9. Core API Routes
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/queue', queueRouter);
 
   // 9. Root Welcome Route
   app.get('/', (_req: Request, res: Response) => {
