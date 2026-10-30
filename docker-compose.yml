@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # PostgreSQL Database
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: reachinbox-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: reachinbox
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reachinbox"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reachinbox-net
+
+  # ============================================================
+  # Redis Cache & BullMQ Queue Broker
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: reachinbox-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reachinbox-net
+
+  # ============================================================
+  # Elasticsearch 8 Search Engine
+  # ============================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: reachinbox-elasticsearch
+    restart: always
+    environment:
+      - node.name=reachinbox-es
+      - cluster.name=reachinbox-cluster
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cat/health | grep -q 'reachinbox-cluster' || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reachinbox-net
+
+  # ============================================================
+  # Backend API Server & BullMQ Worker
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reachinbox-backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      FRONTEND_URL: http://localhost:3000
+      API_BASE_URL: http://localhost:5000
+      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/reachinbox?schema=public"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ELASTICSEARCH_NODE: http://elasticsearch:9200
+      JWT_SECRET: super_production_secret_jwt_key_32_chars_reachinbox!
+      JWT_EXPIRES_IN: 7d
+      COOKIE_SECRET: super_production_cookie_secret_reachinbox!
+      MAX_EMAILS_PER_HOUR: 200
+      MAX_EMAILS_PER_SENDER: 50
+      EMAIL_DELAY_SECONDS: 2
+      WORKER_CONCURRENCY: 5
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - reachinbox-net
+
+  # ============================================================
+  # Frontend Next.js 15 App
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reachinbox-frontend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - reachinbox-net
+
+networks:
+  reachinbox-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  es_data:
+    driver: local

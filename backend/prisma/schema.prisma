@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  CANCELLED
+  FAILED
+}
+
+enum EmailStatus {
+  PENDING
+  QUEUED
+  DELAYED
+  PROCESSING
+  SENT
+  FAILED
+  RETRYING
+  BOUNCED
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+  DEBUG
+}
+
+model User {
+  id           String             @id @default(uuid())
+  googleId     String?            @unique
+  email        String             @unique
+  name         String
+  avatar       String?
+  role         Role               @default(USER)
+  refreshToken String?            @db.Text
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  campaigns    EmailCampaign[]
+  slackConfig  SlackIntegration?
+  auditLogs    AuditLog[]
+
+  @@index([email])
+  @@index([googleId])
+  @@map("users")
+}
+
+model EmailCampaign {
+  id              String            @id @default(uuid())
+  userId          String
+  title           String
+  subject         String
+  htmlBody        String            @db.Text
+  plainText       String?           @db.Text
+  senderEmail     String
+  senderName      String?
+  status          CampaignStatus    @default(DRAFT)
+  scheduledAt     DateTime
+  delaySeconds    Int               @default(0)
+  hourlyLimit     Int               @default(100)
+  totalRecipients Int               @default(0)
+  sentCount       Int               @default(0)
+  failedCount     Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients      EmailRecipient[]
+  scheduledEmails ScheduledEmail[]
+
+  @@index([userId, status])
+  @@index([status, scheduledAt])
+  @@map("email_campaigns")
+}
+
+model ScheduledEmail {
+  id             String         @id @default(uuid())
+  campaignId     String
+  recipientEmail String
+  recipientName  String?
+  subject        String
+  htmlBody       String         @db.Text
+  senderEmail    String
+  status         EmailStatus    @default(PENDING)
+  bullJobId      String?        @unique
+  scheduledAt    DateTime
+  sentAt         DateTime?
+  attemptCount   Int            @default(0)
+  maxAttempts    Int            @default(5)
+  lastError      String?        @db.Text
+  messageId      String?
+  etherealUrl    String?        @db.Text
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  campaign       EmailCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  queueLogs      QueueLog[]
+
+  @@index([status, scheduledAt])
+  @@index([senderEmail, scheduledAt])
+  @@index([campaignId, status])
+  @@index([recipientEmail])
+  @@index([bullJobId])
+  @@map("scheduled_emails")
+}
+
+model EmailRecipient {
+  id             String         @id @default(uuid())
+  campaignId     String
+  email          String
+  name           String?
+  metadata       Json?
+  isValid        Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+
+  campaign       EmailCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, email])
+  @@map("email_recipients")
+}
+
+model SlackIntegration {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  teamId            String?
+  teamName          String?
+  channelId         String?
+  channelName       String?
+  webhookUrl        String?   @db.Text
+  accessToken       String?   @db.Text
+  isConnected       Boolean   @default(true)
+  alertOnRateLimit  Boolean   @default(true)
+  alertOnFailure    Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("slack_integrations")
+}
+
+model QueueLog {
+  id               String          @id @default(uuid())
+  scheduledEmailId String?
+  bullJobId        String?
+  event            String
+  level            LogLevel        @default(INFO)
+  message          String          @db.Text
+  details          Json?
+  createdAt        DateTime        @default(now())
+
+  scheduledEmail   ScheduledEmail? @relation(fields: [scheduledEmailId], references: [id], onDelete: SetNull)
+
+  @@index([bullJobId])
+  @@index([scheduledEmailId])
+  @@index([createdAt])
+  @@map("queue_logs")
+}
+
+model AuditLog {
+  id        String    @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
