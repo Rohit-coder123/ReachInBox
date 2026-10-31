@@ -8,6 +8,7 @@ RUN npm ci
 
 COPY tsconfig.json next.config.mjs postcss.config.mjs tailwind.config.ts ./
 COPY src ./src/
+COPY public ./public
 
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
