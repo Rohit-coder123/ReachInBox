@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Zap, ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Zap, ShieldCheck, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
@@ -63,96 +63,107 @@ function LoginContent() {
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      {/* Left Column: Branding & Value Props */}
-      <div className="relative hidden w-full lg:flex lg:w-1/2 flex-col justify-between p-12 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
+      {/* Left Column: Enterprise Value Proposition & Visual Glow */}
+      <div className="relative hidden w-full lg:flex lg:w-1/2 flex-col justify-between p-12 lg:p-16 bg-slate-950 text-white overflow-hidden">
+        {/* Ambient radial mesh gradients */}
+        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 -right-32 h-96 w-96 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 left-1/3 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+
+        {/* Brand header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-lg shadow-blue-500/30 border border-white/20">
             <Zap className="h-6 w-6 fill-current" />
           </div>
           <div>
-            <span className="text-xl font-bold tracking-tight">ReachInbox</span>
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+            <span className="text-xl font-extrabold tracking-tight">ReachInbox</span>
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-blue-400">
               Distributed Email Engine
             </span>
           </div>
         </div>
 
-        <div className="space-y-6 max-w-lg">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-300 font-medium">
-            <ShieldCheck className="h-4 w-4" /> Production Grade Architecture
+        {/* Core Value Hero */}
+        <div className="relative z-10 space-y-6 max-w-lg my-auto py-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs text-blue-300 font-semibold shadow-2xs backdrop-blur-md">
+            <ShieldCheck className="h-4 w-4 text-blue-400" />
+            Production Grade Architecture
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl leading-tight">
+
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl leading-tight text-white">
             Enterprise Email Scheduling at Scale
           </h1>
-          <p className="text-slate-300 text-base leading-relaxed">
-            Dispatch thousands of personalized emails with automatic rate limiting, BullMQ delayed job persistence, zero dropped emails via next-hour rollover, and real-time Slack alerting.
+
+          <p className="text-slate-300 text-base leading-relaxed font-normal">
+            Dispatch thousands of personalized emails with BullMQ delayed job persistence, zero dropped emails via next-hour rollover, and real-time Slack alerting.
           </p>
 
-          <div className="grid grid-cols-2 gap-4 pt-4">
-            <div className="flex items-start gap-3">
+          <div className="grid grid-cols-2 gap-3.5 pt-3">
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-sm">
-                <span className="font-semibold block text-white">Crash Resilient</span>
-                <span className="text-slate-400 text-xs">BullMQ delayed jobs persisted in Redis</span>
+                <span className="font-bold block text-white text-xs">Crash Resilient</span>
+                <span className="text-slate-400 text-[11px] leading-tight block mt-0.5">BullMQ jobs persisted in Redis</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-sm">
-                <span className="font-semibold block text-white">Zero Job Dropping</span>
-                <span className="text-slate-400 text-xs">Auto-rollover to next hour window</span>
+                <span className="font-bold block text-white text-xs">Zero Dropped</span>
+                <span className="text-slate-400 text-[11px] leading-tight block mt-0.5">Auto-rollover to next hour window</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-sm">
-                <span className="font-semibold block text-white">Instant Search</span>
-                <span className="text-slate-400 text-xs">Elasticsearch edge_ngram autocomplete</span>
+                <span className="font-bold block text-white text-xs">Instant Search</span>
+                <span className="text-slate-400 text-[11px] leading-tight block mt-0.5">Elasticsearch autocomplete</span>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-sm">
-                <span className="font-semibold block text-white">Multi-Channel Alerts</span>
-                <span className="text-slate-400 text-xs">Real-time Slack webhooks & OAuth</span>
+                <span className="font-bold block text-white text-xs">Slack Webhooks</span>
+                <span className="text-slate-400 text-[11px] leading-tight block mt-0.5">Real-time rollover notifications</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="text-xs text-slate-400 flex items-center justify-between border-t border-slate-800 pt-6">
-          <span>Google OAuth 2.0 & BullMQ Architecture</span>
+        {/* Footer info */}
+        <div className="relative z-10 text-xs text-slate-400 flex items-center justify-between border-t border-slate-800/80 pt-6 font-medium">
+          <span>Google OAuth 2.0 & Redis Cluster</span>
           <span>ReachInbox Platform v1.0</span>
         </div>
       </div>
 
       {/* Right Column: Authentication Card */}
-      <div className="flex flex-1 items-center justify-center p-6 md:p-12 bg-background">
+      <div className="relative flex flex-1 items-center justify-center p-6 sm:p-10 lg:p-16 bg-background">
         <div className="w-full max-w-md space-y-6">
           {/* Mobile brand header */}
           <div className="flex lg:hidden items-center justify-center gap-3 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-lg shadow-blue-500/20">
               <Zap className="h-6 w-6 fill-current" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-foreground">ReachInbox</span>
+            <span className="text-2xl font-extrabold tracking-tight text-foreground">ReachInbox</span>
           </div>
 
-          <Card className="border-border/80 shadow-xl bg-card">
-            <CardHeader className="text-center space-y-2 pb-6">
-              <CardTitle className="text-2xl font-bold tracking-tight">Sign in to your account</CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+          <Card className="border-border/70 shadow-xl bg-card/90 backdrop-blur-xl rounded-3xl overflow-hidden">
+            <CardHeader className="text-center space-y-2 p-8 pb-6 border-b border-border/50">
+              <CardTitle className="text-2xl font-extrabold tracking-tight">Sign in to ReachInbox</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground leading-relaxed">
                 Authenticate securely using Google OAuth to access your email scheduler dashboard
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="p-8 pt-6 space-y-4">
               {/* Real Google OAuth Button */}
               <Button
                 variant="outline"
-                className="w-full h-12 gap-3 text-sm font-semibold border-border hover:bg-accent relative shadow-sm"
+                className="w-full h-12 gap-3 text-sm font-semibold border-border/80 hover:bg-accent/60 relative shadow-sm rounded-2xl transition-all duration-200"
                 onClick={handleGoogleLogin}
               >
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
@@ -178,17 +189,19 @@ function LoginContent() {
 
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
+                  <span className="w-full border-t border-border/70" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground font-medium">Or for local evaluation</span>
+                  <span className="bg-card px-3 text-muted-foreground font-semibold text-[11px] tracking-wider">
+                    Or instant evaluator access
+                  </span>
                 </div>
               </div>
 
               {/* Instant Dev Login */}
               <Button
                 variant="secondary"
-                className="w-full h-11 text-xs font-semibold"
+                className="w-full h-11 text-xs font-semibold rounded-2xl border border-border/60 hover:bg-accent/80 transition-all duration-200"
                 onClick={handleDevLogin}
                 isLoading={isDevLoading}
               >
@@ -196,8 +209,8 @@ function LoginContent() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
 
-              <p className="text-[11px] text-center text-muted-foreground pt-2">
-                Protected by strict session cookies and JWT cryptography. Zero passwords stored on servers.
+              <p className="text-[11px] text-center text-muted-foreground pt-3 leading-relaxed">
+                Secured by strict HTTP-only session cookies and SHA-256 JWT cryptography.
               </p>
             </CardContent>
           </Card>
