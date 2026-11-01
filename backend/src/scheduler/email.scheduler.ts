@@ -224,34 +224,43 @@ export class EmailScheduler {
   }
 
   /**
-   * Cancel an enqueued job by removing it from BullMQ and marking DB record as CANCELLED
+   * Cancel an enqueued job by removing it from BullMQ and deleting the record from ScheduledEmail
    */
   async cancelJob(scheduledEmailId: string): Promise<boolean> {
     const email = await prisma.scheduledEmail.findUnique({
       where: { id: scheduledEmailId },
     });
 
-    if (!email || !email.bullJobId) {
+    if (!email) {
       return false;
     }
 
-    const job = await emailQueue.getJob(email.bullJobId);
-    if (job) {
-      await job.remove();
+    if (email.bullJobId) {
+      try {
+        const job = await emailQueue.getJob(email.bullJobId);
+        if (job) {
+          await job.remove();
+        }
+      } catch (err) {
+        queueLogger.warn(`Could not remove BullMQ job: ${email.bullJobId}`, { err });
+      }
     }
-
-    await prisma.scheduledEmail.update({
-      where: { id: scheduledEmailId },
-      data: { status: EmailStatus.PENDING, bullJobId: null },
-    });
 
     await prisma.queueLog.create({
       data: {
-        scheduledEmailId,
+        bullJobId: email.bullJobId,
         event: 'JOB_CANCELLED',
         level: LogLevel.INFO,
-        message: 'Scheduled job was cancelled and removed from queue',
+        message: `Scheduled email to ${email.recipientEmail} was cancelled and removed from queue`,
+        details: {
+          recipientEmail: email.recipientEmail,
+          subject: email.subject,
+        },
       },
+    });
+
+    await prisma.scheduledEmail.delete({
+      where: { id: scheduledEmailId },
     });
 
     return true;

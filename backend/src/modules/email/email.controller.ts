@@ -22,7 +22,7 @@ export class EmailController {
       campaign: { userId: req.user.id },
       status: status
         ? (status as EmailStatus)
-        : { in: [EmailStatus.PENDING, EmailStatus.QUEUED, EmailStatus.DELAYED, EmailStatus.RETRYING] },
+        : { in: [EmailStatus.QUEUED, EmailStatus.DELAYED, EmailStatus.RETRYING] },
     };
 
     if (search) {
