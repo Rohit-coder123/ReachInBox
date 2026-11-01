@@ -169,7 +169,7 @@ export class EmailScheduler {
       // Create BullMQ Delayed Job (Jobs survive Redis restart via appendonly persistence)
       const job = await emailQueue.add('send-email', jobPayload, {
         delay: delayMs,
-        jobId: `email:${emailRecord.id}`,
+        jobId: `email-${emailRecord.id}`,
       });
 
       // Update PostgreSQL ScheduledEmail record
