@@ -90,10 +90,15 @@ services:
       JWT_SECRET: super_production_secret_jwt_key_32_chars_reachinbox!
       JWT_EXPIRES_IN: 7d
       COOKIE_SECRET: super_production_cookie_secret_reachinbox!
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:5000/api/auth/google/callback}
       MAX_EMAILS_PER_HOUR: 200
       MAX_EMAILS_PER_SENDER: 50
       EMAIL_DELAY_SECONDS: 2
       WORKER_CONCURRENCY: 5
+    env_file:
+      - ./backend/.env
     ports:
       - "5000:5000"
     depends_on:

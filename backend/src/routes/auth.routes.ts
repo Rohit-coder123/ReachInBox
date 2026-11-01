@@ -4,6 +4,7 @@ import { authController } from '../modules/auth/auth.controller';
 import { authenticateJwt } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rate-limiter.middleware';
 import { asyncHandler } from '../shared/response';
+import { config } from '../config';
 
 export const authRouter = Router();
 
@@ -35,10 +36,7 @@ authRouter.get(
 );
 
 authRouter.get('/failure', (_req, res) => {
-  res.status(401).json({
-    success: false,
-    message: 'Google authentication failed or was cancelled',
-  });
+  res.redirect(`${config.app.frontendUrl}/login?error=auth_failed`);
 });
 
 // Dev / local login

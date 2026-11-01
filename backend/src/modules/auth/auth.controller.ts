@@ -19,8 +19,8 @@ export class AuthController {
       const token = authService.generateToken(user);
       authService.setAuthCookie(res, token);
 
-      // Redirect to frontend dashboard with token
-      const redirectUrl = `${config.app.frontendUrl}/dashboard?token=${encodeURIComponent(token)}`;
+      // Redirect to frontend login handler with token to initialize session
+      const redirectUrl = `${config.app.frontendUrl}/login?token=${encodeURIComponent(token)}`;
       res.redirect(redirectUrl);
     } catch (error) {
       logger.error('Error during Google callback handling:', { error });
