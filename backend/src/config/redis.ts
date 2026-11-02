@@ -19,10 +19,20 @@ const redisOptions: RedisOptions = {
   },
 };
 
-export const redisConnection = new Redis(redisOptions);
+export const redisConnection = config.redis.url
+  ? new Redis(config.redis.url, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      lazyConnect: config.app.isTest,
+    })
+  : new Redis(redisOptions);
 
 redisConnection.on('connect', () => {
-  logger.info(`✅ Connected to Redis at ${config.redis.host}:${config.redis.port}`);
+  logger.info(
+    config.redis.url
+      ? '✅ Connected to Redis via REDIS_URL'
+      : `✅ Connected to Redis at ${config.redis.host}:${config.redis.port}`
+  );
 });
 
 redisConnection.on('error', (err) => {
