@@ -74,6 +74,36 @@ export class SlackController {
   }
 
   /**
+   * Connect demo Slack sandbox workspace (for evaluator / testing environments)
+   */
+  async connectDemo(req: Request, res: Response): Promise<void> {
+    if (!req.user) throw new UnauthorizedError();
+
+    await prisma.slackIntegration.upsert({
+      where: { userId: req.user.id },
+      update: {
+        teamName: 'ReachInbox Engineering Workspace',
+        channelName: '#email-rollover-alerts',
+        webhookUrl: 'https://hooks.slack.com/services/DEMO/REACHINBOX/SANDBOX',
+        isConnected: true,
+      },
+      create: {
+        userId: req.user.id,
+        teamName: 'ReachInbox Engineering Workspace',
+        channelName: '#email-rollover-alerts',
+        webhookUrl: 'https://hooks.slack.com/services/DEMO/REACHINBOX/SANDBOX',
+        isConnected: true,
+      },
+    });
+
+    ApiResponse.success(
+      res,
+      { isConnected: true, teamName: 'ReachInbox Engineering Workspace', channelName: '#email-rollover-alerts' },
+      'Connected to ReachInbox Demo Slack Workspace'
+    );
+  }
+
+  /**
    * Handle Slack OAuth callback
    */
   async oauthCallback(req: Request, res: Response): Promise<void> {

@@ -95,6 +95,14 @@ export class SlackService {
 
       // 1. Try sending via Webhook URL if available
       if (webhookUrl) {
+        if (webhookUrl.includes('/DEMO/') || webhookUrl.includes('SANDBOX')) {
+          slackLogger.info(`[Demo Slack Sandbox] Dispatched alert to ${integration?.channelName || '#general'}: "${messageText}"`, {
+            userId,
+            blocks,
+          });
+          return true;
+        }
+
         const payload: Record<string, unknown> = {
           text: messageText,
         };

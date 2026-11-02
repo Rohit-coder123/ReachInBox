@@ -13,5 +13,6 @@ slackRouter.get('/status', authenticateJwt, asyncHandler(slackController.getStat
 slackRouter.post('/webhook', authenticateJwt, asyncHandler(slackController.configureWebhook.bind(slackController)));
 slackRouter.post('/test', authenticateJwt, asyncHandler(slackController.sendTestNotification.bind(slackController)));
 slackRouter.post('/disconnect', authenticateJwt, asyncHandler(slackController.disconnect.bind(slackController)));
+slackRouter.post('/demo-connect', authenticateJwt, asyncHandler(slackController.connectDemo.bind(slackController)));
 
 export default slackRouter;

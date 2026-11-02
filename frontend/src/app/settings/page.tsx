@@ -113,10 +113,22 @@ export default function SettingsPage() {
     },
   });
 
+  // Connect Demo Slack mutation
+  const connectDemoSlackMutation = useMutation({
+    mutationFn: () => api.slack.connectDemo(),
+    onSuccess: () => {
+      toast.success('Connected to ReachInbox Demo Slack Workspace (#email-rollover-alerts)!');
+      refetchSlack();
+    },
+    onError: () => {
+      toast.error('Failed to connect demo Slack');
+    },
+  });
+
   const handleConnectSlackOAuth = () => {
     const clientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID || '';
     if (!clientId) {
-      toast.info('Slack OAuth app credentials not set in env. You can enter an Incoming Webhook URL below!');
+      connectDemoSlackMutation.mutate();
       return;
     }
     const redirectUri = `${API_BASE_URL}/api/slack/oauth/callback`;
@@ -205,16 +217,28 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="space-y-5">
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <Button
                     type="button"
                     onClick={handleConnectSlackOAuth}
+                    isLoading={connectDemoSlackMutation.isPending}
                     className="gap-2.5 bg-[#4A154B] hover:bg-[#3D113E] text-white rounded-xl shadow-xs font-semibold px-4 py-2.5 h-11"
                   >
                     <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                       <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z" />
                     </svg>
                     Connect with Slack OAuth
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => connectDemoSlackMutation.mutate()}
+                    isLoading={connectDemoSlackMutation.isPending}
+                    className="gap-2 rounded-xl border-border/80 h-11 text-xs font-semibold hover:bg-accent/60"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                    Instant Demo Slack Workspace (Sandbox)
                   </Button>
                 </div>
 

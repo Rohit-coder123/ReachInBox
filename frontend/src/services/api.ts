@@ -97,6 +97,7 @@ export const api = {
       apiClient.post('/slack/webhook', { webhookUrl, channelName }).then((r) => r.data.data),
     testNotification: () => apiClient.post('/slack/test').then((r) => r.data.data),
     disconnect: () => apiClient.post('/slack/disconnect').then((r) => r.data.data),
+    connectDemo: () => apiClient.post('/slack/demo-connect').then((r) => r.data.data),
   },
 
   // Settings
