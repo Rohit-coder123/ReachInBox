@@ -13,6 +13,7 @@ import {
   Clock,
   Send,
   User,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,19 @@ export default function SearchPage() {
   const [statusFilter, setStatusFilter] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [showSuggestions, setShowSuggestions] = React.useState(false);
+  const [selectedIndex, setSelectedIndex] = React.useState(-1);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Close suggestions when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Debounce search query
   React.useEffect(() => {
@@ -63,7 +77,37 @@ export default function SearchPage() {
 
   const handleSelectSuggestion = (suggestion: string) => {
     setQuery(suggestion);
+    setDebouncedQuery(suggestion);
+    setPage(1);
     setShowSuggestions(false);
+    setSelectedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+        handleSelectSuggestion(suggestions[selectedIndex]);
+      } else {
+        setDebouncedQuery(query.trim());
+        setPage(1);
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!showSuggestions && suggestions.length > 0) {
+        setShowSuggestions(true);
+      } else {
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+    }
   };
 
   return (
@@ -84,41 +128,75 @@ export default function SearchPage() {
         </p>
       </div>
 
-      <Card className="border-border/70 shadow-sm overflow-hidden">
+      <Card className="border-border/70 shadow-sm overflow-visible">
         <CardHeader className="p-5 border-b border-border/60 bg-card/60 backdrop-blur-md">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             {/* Search Input with Autocomplete Dropdown */}
-            <div className="relative flex-1 max-w-lg">
+            <div ref={containerRef} className="relative flex-1 max-w-lg">
               <SearchIcon className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground/70" />
               <Input
                 placeholder="Search by email, recipient name, or subject..."
-                className="pl-10 h-10 rounded-xl bg-background/70 border-border/70 text-sm focus-visible:ring-primary/20"
+                className="pl-10 pr-9 h-10 rounded-xl bg-background border-border text-sm focus-visible:ring-primary/20"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setShowSuggestions(true);
+                  setSelectedIndex(-1);
                 }}
-                onFocus={() => setShowSuggestions(true)}
+                onFocus={() => {
+                  if (query.trim().length >= 2) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onKeyDown={handleKeyDown}
               />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setDebouncedQuery('');
+                    setPage(1);
+                    setShowSuggestions(false);
+                    setSelectedIndex(-1);
+                  }}
+                  className="absolute right-3 top-3 text-muted-foreground/60 hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
 
               {/* Suggestions Dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-12 left-0 right-0 z-50 rounded-2xl border border-border/80 bg-popover/95 backdrop-blur-xl shadow-xl overflow-hidden py-1.5 animate-in fade-in-50 zoom-in-95">
-                  <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/50 flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-purple-500" />
-                    Elasticsearch Suggestions
+                <div className="absolute top-12 left-0 right-0 z-50 rounded-xl border border-border bg-white dark:bg-zinc-900 text-card-foreground shadow-2xl overflow-hidden py-1.5 animate-in fade-in-50 zoom-in-95">
+                  <div className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
+                    <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                      <Sparkles className="h-3 w-3" />
+                      Elasticsearch Suggestions
+                    </span>
+                    <span className="text-[9px] text-muted-foreground font-mono font-normal">Press Enter ↵</span>
                   </div>
-                  {suggestions.map((s, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectSuggestion(s)}
-                      className="w-full text-left px-3.5 py-2 text-xs text-foreground hover:bg-accent/60 flex items-center gap-2.5 transition-colors"
-                    >
-                      <SearchIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="font-medium">{s}</span>
-                    </button>
-                  ))}
+                  <div className="max-h-60 overflow-y-auto py-1">
+                    {suggestions.map((s, idx) => {
+                      const isSelected = selectedIndex === idx;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(s)}
+                          onMouseEnter={() => setSelectedIndex(idx)}
+                          className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center gap-2.5 transition-colors ${
+                            isSelected
+                              ? 'bg-primary/10 text-primary font-semibold'
+                              : 'text-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          <SearchIcon className={`h-3.5 w-3.5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <span className="font-medium truncate">{s}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
