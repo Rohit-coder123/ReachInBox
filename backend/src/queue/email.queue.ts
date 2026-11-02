@@ -9,6 +9,7 @@ export const DLQ_QUEUE_NAME = 'email-dlq';
 export interface EmailJobPayload {
   scheduledEmailId: string;
   campaignId: string;
+  userId?: string;
   recipientEmail: string;
   recipientName?: string | null;
   subject: string;

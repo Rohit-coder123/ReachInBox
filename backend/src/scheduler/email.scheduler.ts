@@ -4,6 +4,7 @@ import { prisma } from '../database/prisma';
 import { config } from '../config';
 import { queueLogger } from '../utils/logger';
 import { slackService } from '../modules/slack/slack.service';
+import { elasticsearchService } from '../modules/search/elasticsearch.service';
 import { EmailStatus, CampaignStatus, LogLevel } from '@prisma/client';
 
 export interface ScheduleOptions {
@@ -157,6 +158,7 @@ export class EmailScheduler {
       const jobPayload: EmailJobPayload = {
         scheduledEmailId: emailRecord.id,
         campaignId,
+        userId: campaign?.userId,
         recipientEmail: emailRecord.recipientEmail,
         recipientName: emailRecord.recipientName,
         subject: emailRecord.subject,
@@ -172,15 +174,33 @@ export class EmailScheduler {
         jobId: `email-${emailRecord.id}`,
       });
 
+      const effectiveStatus = delayMs > 1000 ? EmailStatus.DELAYED : EmailStatus.QUEUED;
+
       // Update PostgreSQL ScheduledEmail record
       await prisma.scheduledEmail.update({
         where: { id: emailRecord.id },
         data: {
           bullJobId: job.id,
           scheduledAt: scheduledDate,
-          status: delayMs > 1000 ? EmailStatus.DELAYED : EmailStatus.QUEUED,
+          status: effectiveStatus,
         },
       });
+
+      // Index to Elasticsearch
+      elasticsearchService
+        .indexEmail({
+          id: emailRecord.id,
+          campaignId,
+          userId: campaign?.userId,
+          recipient: emailRecord.recipientEmail,
+          recipientName: emailRecord.recipientName,
+          subject: emailRecord.subject,
+          sender: senderEmail,
+          status: effectiveStatus,
+          scheduledTime: scheduledDate.toISOString(),
+          createdAt: emailRecord.createdAt.toISOString(),
+        })
+        .catch(() => {});
 
       // Persist Queue Log
       await prisma.queueLog.create({
@@ -262,6 +282,8 @@ export class EmailScheduler {
     await prisma.scheduledEmail.delete({
       where: { id: scheduledEmailId },
     });
+
+    elasticsearchService.deleteEmail(scheduledEmailId).catch(() => {});
 
     return true;
   }

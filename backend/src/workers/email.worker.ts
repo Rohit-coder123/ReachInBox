@@ -135,6 +135,7 @@ export class EmailWorkerService {
       .indexEmail({
         id: scheduledEmailId,
         campaignId,
+        userId: job.data.userId,
         recipient: recipientEmail,
         recipientName,
         subject,

@@ -90,8 +90,71 @@ export class ElasticsearchService {
       }
 
       this.isIndexInitialized = true;
+      await this.syncFromDatabase();
     } catch (error: any) {
       logger.warn(`Failed to initialize Elasticsearch index: ${error.message}`);
+    }
+  }
+
+  /**
+   * Delete single email document
+   */
+  async deleteEmail(id: string): Promise<void> {
+    try {
+      await esClient.delete({
+        index: EMAIL_INDEX,
+        id,
+      });
+    } catch {
+      // Ignore if document not found in ES
+    }
+  }
+
+  /**
+   * Bulk sync all scheduled and sent emails from Postgres into Elasticsearch
+   */
+  async syncFromDatabase(): Promise<number> {
+    try {
+      const isHealthy = await checkElasticsearchHealth();
+      if (!isHealthy) return 0;
+
+      const emails = await prisma.scheduledEmail.findMany({
+        include: {
+          campaign: {
+            select: { userId: true },
+          },
+        },
+      });
+
+      if (emails.length === 0) return 0;
+
+      const operations = emails.flatMap((e) => [
+        { index: { _index: EMAIL_INDEX, _id: e.id } },
+        {
+          id: e.id,
+          campaignId: e.campaignId,
+          userId: e.campaign.userId,
+          recipient: e.recipientEmail,
+          recipientName: e.recipientName,
+          subject: e.subject,
+          sender: e.senderEmail,
+          status: e.status,
+          scheduledTime: e.scheduledAt.toISOString(),
+          sentAt: e.sentAt ? e.sentAt.toISOString() : null,
+          createdAt: e.createdAt.toISOString(),
+        },
+      ]);
+
+      const bulkResponse = await esClient.bulk({ refresh: true, operations });
+      if (bulkResponse.errors) {
+        logger.warn('Some errors occurred during Elasticsearch bulk sync');
+      } else {
+        logger.info(`✅ Successfully synced ${emails.length} emails from PostgreSQL to Elasticsearch`);
+      }
+      return emails.length;
+    } catch (error: any) {
+      logger.warn(`Failed to sync from database to Elasticsearch: ${error.message}`);
+      return 0;
     }
   }
 
